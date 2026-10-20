@@ -1,0 +1,2 @@
+# 品牌名 本机repo路径
+# demobet88 /Users/mj/code/mjh-demobet88
