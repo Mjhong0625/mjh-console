@@ -41,14 +41,14 @@ app.post("/go", async (req, res) => {
   if (Date.now() - f.t > 600000) { f.n = 0; }
   if (f.n >= 20) return res.status(429).json({ error: "尝试过多，请稍后再试" });
   const u = clean(req.body.username).toLowerCase();
-  if (!/^[a-z0-9_.-]{2,40}$/.test(u) || u === "owner") { findFails.set(ip, { n: f.n + 1, t: Date.now() }); return res.status(404).json({ error: "找不到这个账号，请确认或联系技术支持" }); }
+  if (!/^[a-z0-9_.-]{2,40}$/.test(u) || u === "owner") { findFails.set(ip, { n: f.n + 1, t: Date.now() }); return res.status(401).json({ error: "账号或密码不正确" }); }
   const hits = (await Promise.all(brands.map(async (b) => {
     const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 6000);
     try { const r = await fetch(b.url + "/api/platform/has-user?u=" + encodeURIComponent(u), { headers: { "x-platform-key": b.key }, signal: ctl.signal }); const j = await r.json(); return j.exists ? b : null; }
     catch (e) { return null; } finally { clearTimeout(tm); }
   }))).filter(Boolean);
-  if (hits.length !== 1) { findFails.set(ip, { n: f.n + 1, t: Date.now() }); return res.status(hits.length ? 409 : 404).json({ error: hits.length ? "账号重复，请联系技术支持" : "找不到这个账号，请确认或联系技术支持" }); }
-  res.json({ url: hits[0].url + "/?u=" + encodeURIComponent(u) });
+  if (hits.length !== 1) { findFails.set(ip, { n: f.n + 1, t: Date.now() }); return res.status(hits.length ? 409 : 401).json({ error: hits.length ? "此账号需要人工处理，请联系管理员" : "账号或密码不正确" }); }
+  res.json({ url: hits[0].url });
 });
 app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 
